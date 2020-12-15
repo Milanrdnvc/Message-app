@@ -1,8 +1,6 @@
 const { createServer } = require('http');
 const router = new (require('./router'))();
 const ecstatic = require('ecstatic');
-const { verify } = require('crypto');
-const { resolve } = require('path');
 const defaultHeaders = { 'Content-Type': 'application/json' };
 
 class MessageAppServer {
@@ -33,7 +31,7 @@ class MessageAppServer {
   }
 
   start(port) {
-    this.server.start(port);
+    this.server.listen(port);
   }
 
   stop() {
@@ -58,13 +56,18 @@ class MessageAppServer {
       }, time * 1000);
     });
   }
+
+  updated() {
+    this.version++;
+    const response = this.messageResponse();
+    this.waiting.forEach(resolve => resolve(response));
+    this.waiting = [];
+  }
 }
 
-const messagePath = /^\/messages$/;
-
-router.add('GET', messagePath, async (server, req) => {
-  const tag = /".(*)"/.exec(req.headers['if-none-match']);
-  const wait = /\bwait=(\d+)/.exec(req.headers('prefer'));
+router.add('GET', '/messages', async (server, req) => {
+  const tag = /"(.*)"/.exec(req.headers['if-none-match']);
+  const wait = /\bwait=(\d+)/.exec(req.headers['prefer']);
 
   if (!tag || tag[1] !== server.version) {
     return server.messageResponse();
@@ -75,7 +78,7 @@ router.add('GET', messagePath, async (server, req) => {
   }
 });
 
-router.add('POST', messagePath, async (server, req) => {
+router.add('POST', '/messages', async (server, req) => {
   const reqBody = await readStream(req);
   let message;
   try {
@@ -96,7 +99,18 @@ router.add('POST', messagePath, async (server, req) => {
   }
 
   server.messages.push(message);
-
   server.updated();
+
   return { status: 204 };
 });
+
+function readStream(stream) {
+  return new Promise((resolve, reject) => {
+    let data = '';
+    stream.on('error', reject);
+    stream.on('data', chunk => (data += chunk.toString()));
+    stream.on('end', () => resolve(data));
+  });
+}
+
+new MessageAppServer().start(5000);

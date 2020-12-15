@@ -13,8 +13,7 @@ module.exports = class Router {
     const path = parse(request.url).pathname;
 
     for (let { method, url, handler } of this.routes) {
-      const match = url.test(path);
-      if (!match || request.method !== method) continue;
+      if (url !== path || request.method !== method) continue;
       return handler(context, request);
     }
 
