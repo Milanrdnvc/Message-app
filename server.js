@@ -113,4 +113,4 @@ function readStream(stream) {
   });
 }
 
-new MessageAppServer().start(5000);
+new MessageAppServer().start(process.env.PORT || 5000);
