@@ -85,11 +85,14 @@ if (!localStorage.getItem('userId')) {
 }
 
 sendBtn.addEventListener('click', postMessage);
-sendBtn.addEventListener('touchend', postMessage);
+sendBtn.addEventListener('touchend', e => {
+  e.preventDefault(); // Prevents click from happening
+  postMessage();
+});
 msgInput.addEventListener('keyup', e => {
   if (e.key === 'Enter') {
     postMessage();
   }
 });
 
-pollMessages();
+// pollMessages();
