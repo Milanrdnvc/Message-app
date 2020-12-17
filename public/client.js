@@ -95,4 +95,4 @@ msgInput.addEventListener('keyup', e => {
   }
 });
 
-// pollMessages();
+pollMessages();
